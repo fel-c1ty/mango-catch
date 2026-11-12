@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d3022">
+<title>Mango Catch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat+Brush&family=DM+Sans:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <canvas id="game" aria-label="Mango Catch play area"></canvas>
+
+    <div id="hud" hidden>
+      <div class="hearts pill" id="hearts" role="img" aria-label="5 of 5 hearts left"></div>
+      <div class="right">
+        <div class="score pill"><span id="score" aria-live="off">0</span><small>Best <b id="best">0</b></small></div>
+        <button class="icon-btn pill" id="pause" type="button" aria-label="Pause" title="Pause (Esc / P)">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1.2"/><rect x="14" y="5" width="4" height="14" rx="1.2"/></svg>
+        </button>
+        <button class="icon-btn pill" id="sound" type="button" aria-pressed="true" aria-label="Sound">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z" fill="currentColor"/><path class="wave" d="M15.5 9a4 4 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <section id="menu" class="overlay" aria-labelledby="menu-title">
+      <div class="card">
+        <h1 id="menu-title"><span class="mk">Mango</span> Catch</h1>
+        <p class="lede">Catch the ripe fruit. Let the rotten ones hit the grass.</p>
+        <div class="legend">
+          <figure><canvas data-sprite="mango_ripe"></canvas><figcaption><b>Ripe</b><span>catch it</span></figcaption></figure>
+          <figure><canvas data-sprite="r_mango"></canvas><figcaption><b>Rotten</b><span>costs a heart</span></figcaption></figure>
+          <figure><canvas data-sprite="mango_gold"></canvas><figcaption><b>Golden</b><span>+25 and a heart back</span></figcaption></figure>
+        </div>
+        <button id="play" class="btn" type="button">Play</button>
+        <p class="hint">Drag anywhere to move. Arrow keys work too. Esc or P pauses. You have 5 hearts.</p>
+        <p class="bestline" id="menu-best" hidden>Best score <b>0</b></p>
+      </div>
+    </section>
+
+    <section id="paused" class="overlay pause" hidden role="dialog" aria-modal="true" aria-labelledby="paused-title">
+      <div class="card">
+        <h2 id="paused-title">Paused</h2>
+        <p class="pause-score">Score <b id="paused-score">0</b></p>
+        <div class="btn-stack">
+          <button id="resume" class="btn" type="button">Resume</button>
+          <button id="restart" class="btn ghost" type="button">Restart</button>
+          <button id="quit-pause" class="btn ghost" type="button">Quit to menu</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="over" class="overlay over" hidden aria-labelledby="over-title">
+      <div class="card">
+        <p class="eyebrow" id="over-title">Out of hearts</p>
+        <div class="big" id="over-score">0</div>
+        <p class="newbest" id="newbest" hidden>New best score</p>
+        <p class="stats" id="over-stats"></p>
+        <p class="bestline">Best score <b id="over-best">0</b></p>
+        <div class="btn-stack">
+          <button id="again" class="btn" type="button">Play again</button>
+          <button id="quit-over" class="btn ghost" type="button">Quit to menu</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<script src="js/game.js" defer></script>
+</body>
+</html>

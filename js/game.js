@@ -457,7 +457,7 @@ const fruits=[],particles=[],popups=[],decals=[],petals=[];
 const keys={left:false,right:false};
 
 /* ---------- HUD ---------- */
-const heartsEl=$('hearts'), scoreEl=$('score'), bestEl=$('best'), hud=$('hud'), menu=$('menu'), over=$('over');
+const heartsEl=$('hearts'), scoreEl=$('score'), bestEl=$('best'), hud=$('hud'), menu=$('menu'), over=$('over'), pausedEl=$('paused');
 const HEART='<svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
 heartsEl.innerHTML=HEART.repeat(5);
 function updateHud(pulseIdx){
@@ -472,15 +472,46 @@ const soundBtn=$('sound');
 function paintSoundBtn(){soundBtn.setAttribute('aria-pressed',muted?'false':'true');soundBtn.setAttribute('aria-label',muted?'Sound off':'Sound on');}
 soundBtn.addEventListener('click',e=>{e.stopPropagation();muted=!muted;try{localStorage.setItem('mangoCatchMuted',muted?'1':'0');}catch(x){}paintSoundBtn();});
 soundBtn.addEventListener('pointerdown',e=>e.stopPropagation());
+const pauseBtn=$('pause');
+pauseBtn.addEventListener('click',e=>{e.stopPropagation();pauseGame();});
+pauseBtn.addEventListener('pointerdown',e=>e.stopPropagation());
 
 /* ---------- game flow ---------- */
+function clearField(){
+  fruits.length=0; particles.length=0; popups.length=0; ch.drops.length=0; decals.length=0;
+  ch.exp='idle'; ch.expT=0; ch.worried=false; st.shake=0;
+  drag=null; keys.left=keys.right=false;
+}
 function startGame(){
   initAudio();
   st.score=0; st.hearts=5; st.caught=0; st.mangoes=0; st.combo=0; st.elapsed=0; st.spawnT=0.7; st.dieT=0; st.newBest=false;
-  fruits.length=0; particles.length=0; popups.length=0; ch.drops.length=0; decals.length=0;
-  ch.exp='idle'; ch.expT=0;
-  mode='play'; menu.hidden=true; over.hidden=true; hud.hidden=false;
+  clearField();
+  mode='play'; menu.hidden=true; over.hidden=true; pausedEl.hidden=true; hud.hidden=false;
   updateHud();
+}
+function pauseGame(){
+  if(mode!=='play')return;
+  mode='paused';
+  drag=null; keys.left=keys.right=false;
+  $('paused-score').textContent=st.score;
+  pausedEl.hidden=false;
+  try{$('resume').focus({preventScroll:true});}catch(e){}
+}
+function resumeGame(){
+  if(mode!=='paused')return;
+  initAudio();
+  mode='play'; pausedEl.hidden=true;
+  try{document.activeElement&&document.activeElement.blur();}catch(e){}
+}
+function quitToMenu(){
+  // Keep the best score if the player quits mid-run with a new high.
+  if(st.score>best){best=st.score;try{localStorage.setItem('mangoCatchBest',String(best));}catch(e){}}
+  clearField();
+  st.score=0; st.hearts=5; st.combo=0;
+  mode='menu';
+  hud.hidden=true; over.hidden=true; pausedEl.hidden=true; menu.hidden=false;
+  paintMenuBest(); bestEl.textContent=best;
+  try{$('play').focus({preventScroll:true});}catch(e){}
 }
 function finishGame(){
   mode='over';
@@ -498,6 +529,10 @@ function finishGame(){
 }
 $('play').addEventListener('click',startGame);
 $('again').addEventListener('click',startGame);
+$('resume').addEventListener('click',resumeGame);
+$('restart').addEventListener('click',startGame);
+$('quit-pause').addEventListener('click',quitToMenu);
+$('quit-over').addEventListener('click',quitToMenu);
 
 function spawnFruit(){
   const d=clamp(st.elapsed/100,0,1), hs=H/720;
@@ -582,6 +617,12 @@ stage.addEventListener('pointermove',e=>{
 const endDrag=e=>{if(drag&&e.pointerId===drag.id)drag=null;};
 stage.addEventListener('pointerup',endDrag); stage.addEventListener('pointercancel',endDrag);
 window.addEventListener('keydown',e=>{
+  if(e.key==='Escape'||e.key==='p'||e.key==='P'){
+    if(e.repeat)return;
+    if(mode==='play'){e.preventDefault();pauseGame();}
+    else if(mode==='paused'){e.preventDefault();resumeGame();}
+    return;
+  }
   if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A'){keys.left=true;if(mode==='play')e.preventDefault();}
   else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D'){keys.right=true;if(mode==='play')e.preventDefault();}
 });
@@ -589,7 +630,8 @@ window.addEventListener('keyup',e=>{
   if(e.key==='ArrowLeft'||e.key==='a'||e.key==='A')keys.left=false;
   else if(e.key==='ArrowRight'||e.key==='d'||e.key==='D')keys.right=false;
 });
-window.addEventListener('blur',()=>{keys.left=keys.right=false;drag=null;});
+window.addEventListener('blur',()=>{keys.left=keys.right=false;drag=null;pauseGame();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseGame();});
 
 /* ---------- update ---------- */
 function update(dt){
@@ -911,7 +953,8 @@ let last=0;
 function frame(ts){
   const dt=Math.min(0.05,(ts-last)/1000||0.016);
   last=ts;
-  update(dt); draw();
+  if(mode!=='paused')update(dt);
+  draw();
   requestAnimationFrame(frame);
 }
 function boot(){
@@ -921,6 +964,5 @@ function boot(){
   try{$('play').focus({preventScroll:true});}catch(e){}
   requestAnimationFrame(frame);
 }
-try{if(window.claude&&window.claude.hot&&window.claude.hot.snapshot)window.claude.hot.snapshot(()=>({best:best}));}catch(e){}
-if(window.claude&&window.claude.hot&&window.claude.hot.ready)window.claude.hot.ready(boot); else boot();
+boot();
 })();
